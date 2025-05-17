@@ -4,14 +4,15 @@ trait Run {
     fn run(&self);
 }
 
-struct Human;
-
-impl Human {
-    pub fn global() -> &'static Self {
-        static INSTANCE: OnceCell<Human> = OnceCell::new();
-        INSTANCE.get_or_init(|| Human)
-    }
+macro_rules! singleton {
+    ($type:tt) => {{
+        static INSTANCE: OnceCell<$type> = OnceCell::new();
+        INSTANCE.get_or_init(|| <$type>::default())
+    }};
 }
+
+#[derive(Default)]
+struct Human;
 
 impl Run for Human {
     fn run(&self) {
@@ -19,14 +20,8 @@ impl Run for Human {
     }
 }
 
+#[derive(Default)]
 struct Alien;
-
-impl Alien {
-    pub fn global() -> &'static Self {
-        static INSTANCE: OnceCell<Alien> = OnceCell::new();
-        INSTANCE.get_or_init(|| Alien)
-    }
-}
 
 impl Run for Alien {
     fn run(&self) {
@@ -34,14 +29,8 @@ impl Run for Alien {
     }
 }
 
+#[derive(Default)]
 struct Dog;
-
-impl Dog {
-    pub fn global() -> &'static Self {
-        static INSTANCE: OnceCell<Dog> = OnceCell::new();
-        INSTANCE.get_or_init(|| Dog)
-    }
-}
 
 impl Run for Dog {
     fn run(&self) {
@@ -60,13 +49,13 @@ fn main() {
     runnable.run();
 }
 
-// Definetly, slower than static binding. But still binding will happen at startup time. 
+// Definetly, slower than static binding. But still binding will happen at startup time.
 // Assuming when its being used in large backend.
 fn decide_dependency(arg: &str) -> &'static dyn Run {
     match arg {
-        "Dog" => Dog::global(),
-        "Human" => Human::global(),
-        "Alien" => Alien::global(),
+        "Dog" => singleton!(Dog),
+        "Human" => singleton!(Human),
+        "Alien" => singleton!(Alien),
         _ => unreachable!(),
     }
 }
